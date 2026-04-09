@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Users, Calendar, CreditCard, TrendingUp, Building2, Activity } from 'lucide-react';
 import Link from 'next/link';
@@ -77,42 +77,9 @@ const QuickActionCard = ({
 };
 
 export default function DashboardPage() {
-  const { user, token } = useAuth();
-  const [hasInstitution, setHasInstitution] = useState<boolean | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { user, institutions, loading } = useAuth();
 
-  useEffect(() => {
-    // Verificar si el usuario tiene una institución asociada
-    const checkInstitution = async () => {
-      try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-        const res = await fetch(`${apiUrl}/api/institutions/my-admin`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        });
-
-        if (res.ok) {
-          const data = await res.json();
-          setHasInstitution(Array.isArray(data) && data.length > 0);
-        } else {
-          // Si no hay institución o hay error, mostramos el prompt
-          setHasInstitution(false);
-        }
-      } catch (error) {
-        console.error('Error checking institution:', error);
-        setHasInstitution(false);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (token) {
-      checkInstitution();
-    }
-  }, [token]);
-
-  // Mostrar loading mientras verifica
+  // Mostrar loading mientras el contexto carga las instituciones
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -122,7 +89,7 @@ export default function DashboardPage() {
   }
 
   // Si no tiene institución, mostrar el prompt
-  if (!hasInstitution) {
+  if (institutions.length === 0) {
     return <InstitutionPromptCard />;
   }
 

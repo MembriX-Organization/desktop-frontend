@@ -4,6 +4,7 @@ import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter, usePathname } from 'next/navigation';
 import { Building2, Users, Calendar, CreditCard, LogOut, Menu, X } from 'lucide-react';
+import InstitutionSelector from './InstitutionSelector';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -80,6 +81,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               <p className="text-sm font-semibold text-gray-900 truncate">{user.name}</p>
               <p className="text-xs text-gray-500 truncate">{user.email}</p>
             </div>
+            <InstitutionSelector />
           </div>
 
           <nav className="flex-1 p-4 space-y-1">
@@ -146,6 +148,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                     <p className="text-sm font-semibold text-gray-900 truncate">{user.name}</p>
                     <p className="text-xs text-gray-500 truncate">{user.email}</p>
                   </div>
+                  <InstitutionSelector />
                 </div>
 
                 <nav className="flex-1 p-4 space-y-1">
