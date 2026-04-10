@@ -38,7 +38,7 @@ export default function MiembrosPage() {
         const myRes = await fetch(`${apiUrl}/api/institutions/my-admin`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        if (!myRes.ok) throw new Error('No se pudo obtener la institución');
+        if (!myRes.ok) return;
         const myData = await myRes.json();
 
         if (Array.isArray(myData) && myData.length > 0) {
