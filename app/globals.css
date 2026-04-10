@@ -3,35 +3,41 @@
 @theme {
   --font-sans: "Inter", var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono);
-  
-  /* ── Paleta Modular (Verde Pantano y Beige Crema) ── */
-  
-  /* Base Swamp Green Palette */
-  --color-primary: #103726;
-  --color-pantano: #103726;
-  --color-pantano-light: #39C689;
-  --color-pantano-dark: #113B29;
-  
-  /* Complementary & Triadic */
-  --color-plum: #371021;
-  --color-ochre: #372610;
 
-  /* Creams & Whites */
-  --color-crema: #FDFBF7;
-  --color-crema-dark: #EAE5D9;
-  
+  /* ── Paleta Claude / Anthropic ── */
+
+  /* Crail – Terracota cálida (acento principal) */
+  --color-primary: #C15F3C;
+  --color-crail: #C15F3C;
+  --color-crail-dark: #A34E2F;
+
+  /* Pampas – Fondo principal (beige off-white) */
+  --color-pampas: #F4F3EE;
+
+  /* Cloudy – Bordes y texto secundario */
+  --color-cloudy: #B1ADA1;
+
+  /* Surface – Tarjetas y contenedores */
+  --color-surface: #FFFFFF;
+
   /* Animación Background Blobs */
   @keyframes blob {
-    0% { transform: translate(0px, 0px) scale(1); }
-    33% { transform: translate(30px, -50px) scale(1.1); }
-    66% { transform: translate(-20px, 20px) scale(0.9); }
+    0%   { transform: translate(0px, 0px) scale(1); }
+    33%  { transform: translate(30px, -50px) scale(1.1); }
+    66%  { transform: translate(-20px, 20px) scale(0.9); }
     100% { transform: translate(0px, 0px) scale(1); }
   }
 }
 
+:root {
+  --background: #F4F3EE;
+  --foreground: #1C1917;
+}
+
 body {
-  background-color: var(--color-crema);
-  color: var(--color-pantano);
+  background-color: var(--color-pampas);
+  color: var(--foreground);
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
 }
 
@@ -50,29 +56,4 @@ body {
 }
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
-}
-
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
 }
