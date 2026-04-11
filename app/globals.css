@@ -29,11 +29,6 @@
   }
 }
 
-:root {
-  --background: #F4F3EE;
-  --foreground: #1C1917;
-}
-
 body {
   background-color: var(--color-pampas);
   color: var(--foreground);
