@@ -20,9 +20,9 @@ export default function InstitutionPromptCard() {
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-        className="w-full max-w-2xl bg-white rounded-[2.5rem] shadow-[0_8px_30px_rgb(0,0,0,0.08)] p-12 text-center border border-gray-100"
+        className="w-full max-w-2xl bg-white rounded-[2.5rem] shadow-[0_8px_30px_rgb(0,0,0,0.08)] p-12 text-center border border-[#B1ADA1]/20"
       >
-        <div className="w-24 h-24 mx-auto mb-8 bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-pantano-dark)] rounded-3xl flex items-center justify-center shadow-xl">
+        <div className="w-24 h-24 mx-auto mb-8 bg-[var(--color-crail)] rounded-3xl flex items-center justify-center shadow-xl">
           <Building2 className="w-12 h-12 text-white" />
         </div>
 
@@ -35,7 +35,7 @@ export default function InstitutionPromptCard() {
           Para comenzar, necesitas registrar tu institución.
         </p>
 
-        <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl p-8 mb-8">
+        <div className="bg-[var(--color-pampas)] rounded-2xl p-8 mb-8">
           <h2 className="text-xl font-bold text-gray-900 mb-3">
             ¿Qué incluye el registro?
           </h2>
@@ -63,7 +63,7 @@ export default function InstitutionPromptCard() {
           <motion.button
             whileHover={{ scale: 1.02, y: -2 }}
             whileTap={{ scale: 0.98 }}
-            className="w-full max-w-md mx-auto py-5 px-8 bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-pantano-dark)] text-white rounded-2xl font-bold text-lg shadow-xl hover:shadow-2xl transition-all flex items-center justify-center group"
+            className="w-full max-w-md mx-auto py-5 px-8 bg-[var(--color-crail)] text-white rounded-2xl font-bold text-lg shadow-xl hover:shadow-2xl hover:bg-[var(--color-crail-dark)] transition-all flex items-center justify-center group"
           >
             <Plus className="w-6 h-6 mr-3 group-hover:rotate-90 transition-transform duration-300" />
             Inscribir mi institución

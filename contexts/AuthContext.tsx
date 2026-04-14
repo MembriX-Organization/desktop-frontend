@@ -9,13 +9,23 @@ interface User {
   email: string;
   name: string;
   avatarUrl: string | null;
-  role?: string; // Añadido para detectar rol
+  role?: string;
+}
+
+export interface Institution {
+  id: number;
+  name: string;
+  address?: string | null;
+  role?: string;
 }
 
 interface AuthContextType {
   user: User | null;
   token: string | null;
   isAuthenticated: boolean;
+  institutions: Institution[];
+  currentInstitution: Institution | null;
+  setCurrentInstitution: (inst: Institution) => void;
   login: (token: string, user: User) => void;
   logout: () => void;
   loading: boolean;
@@ -27,10 +37,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [institutions, setInstitutions] = useState<Institution[]>([]);
+  const [currentInstitution, setCurrentInstitutionState] = useState<Institution | null>(null);
   const router = useRouter();
 
   useEffect(() => {
-    // Check for token on initial load
     const storedToken = Cookies.get('membrix_token');
     const storedUser = localStorage.getItem('membrix_user');
 
@@ -45,29 +56,64 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setLoading(false);
   }, []);
 
+  // Cargar instituciones cuando hay token
+  useEffect(() => {
+    if (!token) return;
+
+    const fetchInstitutions = async () => {
+      try {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+        const res = await fetch(`${apiUrl}/api/institutions/my-admin`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (!res.ok) return;
+
+        const data: Institution[] = await res.json();
+        setInstitutions(data);
+
+        // Restaurar la última institución seleccionada o usar la primera
+        const stored = localStorage.getItem('membrix_current_institution');
+        if (stored) {
+          try {
+            const parsed: Institution = JSON.parse(stored);
+            const found = data.find((i) => i.id === parsed.id);
+            setCurrentInstitutionState(found ?? data[0] ?? null);
+          } catch {
+            setCurrentInstitutionState(data[0] ?? null);
+          }
+        } else {
+          setCurrentInstitutionState(data[0] ?? null);
+        }
+      } catch (error) {
+        console.error('Error fetching institutions:', error);
+      }
+    };
+
+    fetchInstitutions();
+  }, [token]);
+
+  const setCurrentInstitution = (inst: Institution) => {
+    setCurrentInstitutionState(inst);
+    localStorage.setItem('membrix_current_institution', JSON.stringify(inst));
+  };
+
   const login = (newToken: string, newUser: User) => {
     setToken(newToken);
     setUser(newUser);
-
-    // Almacenamos el token en cookies para mejor uso con rutas
-    Cookies.set('membrix_token', newToken, { expires: 7 }); // expira en 7 días
+    Cookies.set('membrix_token', newToken, { expires: 7 });
     localStorage.setItem('membrix_user', JSON.stringify(newUser));
-
-    // Redirigir según el rol del usuario
-    // Si el usuario es 'institution' o 'admin', va al dashboard institucional
-    // De lo contrario, va al dashboard normal de socio
-    if (newUser.role === 'institution' || newUser.role === 'admin') {
-      router.replace('/dashboard');
-    } else {
-      router.replace('/dashboard'); // Por ahora ambos van al mismo, se puede ajustar luego
-    }
+    router.replace('/dashboard');
   };
 
   const logout = () => {
     setToken(null);
     setUser(null);
+    setInstitutions([]);
+    setCurrentInstitutionState(null);
     Cookies.remove('membrix_token');
     localStorage.removeItem('membrix_user');
+    localStorage.removeItem('membrix_current_institution');
     router.replace('/login');
   };
 
@@ -77,6 +123,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         user,
         token,
         isAuthenticated: !!token,
+        institutions,
+        currentInstitution,
+        setCurrentInstitution,
         login,
         logout,
         loading,
