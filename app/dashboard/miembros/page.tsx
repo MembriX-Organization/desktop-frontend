@@ -1,9 +1,12 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { Users, Mail, ShieldAlert, Award, Search, MoreVertical } from 'lucide-react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
+import { Users, Mail, ShieldAlert, Award, Search, MoreVertical, CheckCircle2, AlertCircle, X } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import AltaSocioModal, { type MemberEnrolled } from '@/components/dashboard/AltaSocioModal';
+
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface Member {
   id: string;
@@ -24,41 +27,132 @@ interface Member {
   };
 }
 
+interface Plan {
+  id: string;
+  membershipType: string;
+  price: string;
+  isActive: boolean;
+}
+
+interface Toast {
+  id: number;
+  message: string;
+  type: 'success' | 'error';
+}
+
+// ─── Toast Container ──────────────────────────────────────────────────────────
+
+function ToastContainer({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: (id: number) => void }) {
+  return (
+    <div className="fixed top-6 right-6 z-[100] flex flex-col gap-3 pointer-events-none">
+      <AnimatePresence>
+        {toasts.map((toast) => (
+          <motion.div
+            key={toast.id}
+            initial={{ opacity: 0, x: 60, scale: 0.95 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: 60, scale: 0.95 }}
+            transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+            className="pointer-events-auto flex items-center gap-3 px-5 py-4 rounded-2xl shadow-xl border text-sm font-medium max-w-sm bg-white"
+          >
+            {toast.type === 'success' ? (
+              <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
+            ) : (
+              <AlertCircle className="w-5 h-5 text-red-500 shrink-0" />
+            )}
+            <span className="flex-1 text-gray-900">{toast.message}</span>
+            <button onClick={() => onDismiss(toast.id)} className="text-gray-400 hover:text-gray-600 transition-colors">
+              <X className="w-4 h-4" />
+            </button>
+          </motion.div>
+        ))}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+// ─── Status Badge ─────────────────────────────────────────────────────────────
+
+function StatusBadge({ status }: { status: string }) {
+  if (status === 'active')
+    return (
+      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+        <Award className="w-3 h-3 mr-1" /> Activo
+      </span>
+    );
+  if (status === 'pending')
+    return (
+      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+        Pendiente
+      </span>
+    );
+  return (
+    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+      Inactivo
+    </span>
+  );
+}
+
+// ─── Main Page ────────────────────────────────────────────────────────────────
+
 export default function MiembrosPage() {
   const { token } = useAuth();
+  const [institutionId, setInstitutionId] = useState<string | null>(null);
   const [members, setMembers] = useState<Member[]>([]);
+  const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [toasts, setToasts] = useState<Toast[]>([]);
+  const toastCounter = useRef(0);
+
+  const addToast = useCallback((message: string, type: 'success' | 'error') => {
+    const id = ++toastCounter.current;
+    setToasts((prev) => [...prev, { id, message, type }]);
+    setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 4000);
+  }, []);
+
+  const dismissToast = useCallback((id: number) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
 
   useEffect(() => {
-    const fetchInstitutionAndMembers = async () => {
+    const fetchData = async () => {
       try {
         const apiUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000').replace(/\/$/, '');
+        const headers = { Authorization: `Bearer ${token}` };
 
-        const myRes = await fetch(`${apiUrl}/api/institutions/my-admin`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const myRes = await fetch(`${apiUrl}/api/institutions/my-admin`, { headers });
         if (!myRes.ok) return;
         const myData = await myRes.json();
 
         if (Array.isArray(myData) && myData.length > 0) {
-          const id = myData[0].id;
-          const membersRes = await fetch(`${apiUrl}/api/institutions/${id}/members`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          if (membersRes.ok) {
-            setMembers(await membersRes.json());
-          }
+          const id = String(myData[0].id);
+          setInstitutionId(id);
+
+          const [membersRes, plansRes] = await Promise.all([
+            fetch(`${apiUrl}/api/institutions/${id}/members`, { headers }),
+            fetch(`${apiUrl}/api/institutions/${id}/membership-data`, { headers }),
+          ]);
+
+          if (membersRes.ok) setMembers(await membersRes.json());
+          if (plansRes.ok) setPlans(await plansRes.json());
         }
       } catch (error) {
-        console.error('Error fetching members:', error);
+        console.error('Error fetching data:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    if (token) fetchInstitutionAndMembers();
+    if (token) fetchData();
   }, [token]);
+
+  const handleSuccess = useCallback((newMember: MemberEnrolled) => {
+    setMembers((prev) => [newMember as unknown as Member, ...prev]);
+    setIsModalOpen(false);
+    addToast(`${newMember.fullName || 'Socio'} dado de alta correctamente`, 'success');
+  }, [addToast]);
 
   const filtered = members.filter((m) => {
     const q = search.toLowerCase();
@@ -67,26 +161,6 @@ export default function MiembrosPage() {
       (m.dni || '').toLowerCase().includes(q)
     );
   });
-
-  const StatusBadge = ({ status }: { status: string }) => {
-    if (status === 'active')
-      return (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-          <Award className="w-3 h-3 mr-1" /> Activo
-        </span>
-      );
-    if (status === 'pending')
-      return (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-          Pendiente
-        </span>
-      );
-    return (
-      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-        Inactivo
-      </span>
-    );
-  };
 
   if (loading) {
     return (
@@ -115,7 +189,10 @@ export default function MiembrosPage() {
               className="pl-9 pr-4 py-2 border border-[#B1ADA1]/30 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-[var(--color-crail)] focus:border-transparent text-sm w-full md:w-64"
             />
           </div>
-          <button className="px-4 py-2 bg-[var(--color-crail)] text-white rounded-xl text-sm font-medium hover:bg-[var(--color-crail-dark)] transition-colors shadow-sm whitespace-nowrap">
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="px-4 py-2 bg-[var(--color-crail)] text-white rounded-xl text-sm font-medium hover:bg-[var(--color-crail-dark)] transition-colors shadow-sm whitespace-nowrap"
+          >
             + Inscribir
           </button>
         </div>
@@ -236,6 +313,20 @@ export default function MiembrosPage() {
           </table>
         </div>
       </div>
+
+      {/* Alta de Socio Modal */}
+      {institutionId && (
+        <AltaSocioModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          institutionId={institutionId}
+          plans={plans.filter((p) => p.isActive)}
+          token={token}
+          onSuccess={handleSuccess}
+        />
+      )}
+
+      <ToastContainer toasts={toasts} onDismiss={dismissToast} />
     </div>
   );
 }
